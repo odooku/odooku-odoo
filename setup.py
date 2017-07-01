@@ -1,7 +1,6 @@
-import os, sys
+import os
 import shutil
 from setuptools import setup, find_packages
-from setuptools.command.install import install as _install
 from pip.index import Link
 from pip.download import unpack_url
 
@@ -12,14 +11,17 @@ ODOO_URL = 'https://github.com/odoo/odoo/archive/10.0.tar.gz'
 
 def bootstrap_odoo(url, location):
     unpack_url(Link(url), location)
+    # Move addons from ./addons to ./odoo/addons
+    # This will put them aside the the base addons.
+    for addon in os.listdir(os.path.join(location, 'addons')):
+        src = os.path.join(location, 'addons', addon)
+        dest = os.path.join(location, 'odoo', 'addons', addon)
+        shutil.move(src, dest)
 
 
 if not os.path.exists(ODOO_LOCATION):
     bootstrap_odoo(ODOO_URL, ODOO_LOCATION)
-    for addon in os.listdir(os.path.join(ODOO_LOCATION, 'addons')):
-        src = os.path.join(ODOO_LOCATION, 'addons', addon)
-        dest = os.path.join(ODOO_LOCATION, 'odoo', 'addons', addon)
-        shutil.move(src, dest)
+
 
 
 setup(
