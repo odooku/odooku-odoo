@@ -1,22 +1,36 @@
 import os
 import shutil
+import tempfile
 from setuptools import setup, find_packages
-from pip.index import Link
-from pip.download import unpack_url
+
 
 ODOO = 'odoo'
+ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
 ODOO_URL = 'https://github.com/odoo/odoo/archive/10.0.tar.gz'
 
 
 def bootstrap_odoo(url, location):
-    unpack_url(Link(url), location)
-    # Move addons from ./addons to ./odoo/addons
+    try:
+        from pip.index import Link
+        from pip.download import unpack_url
+    except ImportError:
+        return False
+
+    temp = tempfile.mkdtemp()
+    unpack_url(Link(url), temp)
+
+    # Move <tempdir>/odoo to ./odoo
+    shutil.move(os.path.join(temp, ODOO), location)
+
+    # Move addons from <tempdir>/addons to ./odoo/addons
     # This will put them aside the the base addons.
-    for addon in os.listdir(os.path.join(location, 'addons')):
-        src = os.path.join(location, 'addons', addon)
-        dest = os.path.join(location, 'odoo', 'addons', addon)
+    for addon in os.listdir(os.path.join(temp, ODOO_ADDONS)):
+        src = os.path.join(temp, ODOO_ADDONS, addon)
+        dest = os.path.join(location, ODOO_ADDONS, addon)
         shutil.move(src, dest)
+
+    return True
 
 
 if not os.path.exists(ODOO_LOCATION):
@@ -32,8 +46,7 @@ setup(
     author_email='raymond@adaptiv.nl',
     description=('Odooku Odoo'),
     license=license,
-    packages=find_packages(ODOO),
-    package_dir={'': ODOO_LOCATION},
+    packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=[
