@@ -7,11 +7,6 @@
 ehthumbs.db
 Thumbs.db
 
-# Development files
-.devoku
-.vagrant
-.bundle
-
 # Database dumps
 *.dump
 *.zip
@@ -35,11 +30,14 @@ pip-delete-this-directory.txt
 # Other logs
 *.log
 
-# virtualenv
+# Virtualenv
 .venv/
 venv/
 ENV/
 
-# install files
-/odoo
+# Distutils
 /build
+/dist
+
+#
+/odoo

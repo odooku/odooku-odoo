@@ -17,3 +17,8 @@ sudo apt-get install libpq-dev
 ```
 brew install postgresql
 ```
+
+
+#
+
+export ODOO_URL=https://github.com/odoo/odoo/archive/10.0.tar.gz

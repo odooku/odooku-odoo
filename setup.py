@@ -1,13 +1,18 @@
 import os
 import shutil
 import tempfile
+import itertools
 from setuptools import setup, find_packages
 
+
+VERSION_FILE = './VERSION'
+URL_FILE = './URL'
 
 ODOO = 'odoo'
 ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
-ODOO_URL = 'https://github.com/odoo/odoo/archive/10.0.tar.gz'
+ODOO_URL = os.environ.get('ODOO_URL', False)
+ODOO_VERSION = os.environ.get('ODOO_VERSION', False)
 
 
 def bootstrap_odoo(url, location):
@@ -34,18 +39,43 @@ def bootstrap_odoo(url, location):
 
 
 if not os.path.exists(ODOO_LOCATION):
-    bootstrap_odoo(ODOO_URL, ODOO_LOCATION)
+    if os.path.exists(URL_FILE):
+        with open(URL_FILE) as f:
+            ODOO_URL = f.read().strip()
 
+    if not ODOO_URL and bootstrap_odoo(ODOO_URL, ODOO_LOCATION):
+        raise Exception(
+            "Could not bootstrap Odoo. Set ODOO_URL and ensure "
+            "Pip is present."
+        )
+
+
+if not ODOO_VERSION:
+    if not os.path.exists(VERSION_FILE):
+        raise Exception(
+            "Could not determine Odoo version. Set ODOO_VERSION."
+        )
+
+    with open(VERSION_FILE) as f:
+        ODOO_VERSION = f.read().strip()
+else:
+    with open(VERSION_FILE, 'w') as f:
+        f.write(ODOO_VERSION)
+
+
+if ODOO_URL:
+    with open(URL_FILE, 'w') as f:
+        f.write(ODOO_URL)
 
 
 setup(
     name='odooku-odoo',
-    version='10.0.1',
+    version=ODOO_VERSION,
     url='https://github.com/odooku/odooku-odoo',
     author='Raymond Reggers - Adaptiv Design',
     author_email='raymond@adaptiv.nl',
     description=('Odooku Odoo'),
-    license=license,
+    license='LGPLv3',
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
