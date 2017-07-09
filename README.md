@@ -17,8 +17,3 @@ sudo apt-get install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-de
 ```
 brew install postgresql
 ```
-
-
-#
-
-export ODOO_URL=https://github.com/odoo/odoo/archive/10.0.tar.gz

@@ -22,6 +22,8 @@ __pycache__/
 # Distribution / packaging
 *.egg-info/
 *.egg
+/build
+/dist
 
 # Installer logs
 pip-log.txt
@@ -34,10 +36,6 @@ pip-delete-this-directory.txt
 .venv/
 venv/
 ENV/
-
-# Distutils
-/build
-/dist
 
 #
 /odoo
