@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import itertools
 from setuptools import setup, find_packages
 
 
@@ -43,7 +42,7 @@ if not os.path.exists(ODOO_LOCATION):
         with open(URL_FILE) as f:
             ODOO_URL = f.read().strip()
 
-    if not ODOO_URL and bootstrap_odoo(ODOO_URL, ODOO_LOCATION):
+    if not ODOO_URL or not bootstrap_odoo(ODOO_URL, ODOO_LOCATION):
         raise Exception(
             "Could not bootstrap Odoo. Set ODOO_URL and ensure "
             "Pip is present."

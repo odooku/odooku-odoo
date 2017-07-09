@@ -9,7 +9,7 @@ Install Odoo through pip.
 # Ubuntu 16
 
 ```
-sudo apt-get install libpq-dev
+sudo apt-get install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libssl-dev
 ```
 
 # OSX
