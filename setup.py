@@ -107,7 +107,7 @@ setup(
         'python-ldap==2.4.27',
         'python-openid==2.2.5',
         'pytz==2016.7',
-        'pyusb==1.0.0b1',
+        'pyusb==1.0.0',
         'PyYAML==3.12',
         'qrcode==5.3',
         'reportlab==3.3.0',
