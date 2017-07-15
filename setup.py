@@ -92,6 +92,7 @@ setup(
         'Mako==1.0.4',
         'MarkupSafe==0.23',
         'mock==2.0.0',
+        'odfpy==1.3.5',
         'ofxparse==0.15',
         'passlib==1.6.5',
         'Pillow==3.4.1',
