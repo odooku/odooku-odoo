@@ -6,6 +6,7 @@ Install Odoo through pip.
 
 # System requirements
 
+
 # Ubuntu 16
 
 ```

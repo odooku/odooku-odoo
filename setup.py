@@ -34,7 +34,7 @@ def _find_addons():
     return addons
 
 
-def find_packages(app=None):
+def find_packages(feature=None):
 
     # Map addons to manifests
     manifests = {
@@ -42,8 +42,11 @@ def find_packages(app=None):
         for addon in _find_addons()
     }
 
+    # Get apps
     apps = {
-        addon: {}
+        addon: {
+            'app_dependencies': set()
+        }
         for addon, manifest
         in manifests.iteritems()
         if manifest.get('application')
@@ -72,17 +75,15 @@ def find_packages(app=None):
         return dependencies
 
     
-
-    # Find dependant addons for each app that have no direct dependency to another app
-    app_addons = {
-        app: set([
-            dep 
-            for dep
-            in get_in_dependencies(app)
-            if not filter(lambda x: x in apps, manifests[dep].get('depends', []))
-        ])
-        for app in apps
-    }
+    # Find dependant and dependency addons for each app
+    app_addons = {}
+    for app in apps:
+        addons = set([app])
+        addons |= get_in_dependencies(app)
+        for addon in list(addons):
+            addons |= get_out_dependencies(addon)
+        
+        app_addons[app] = addons
 
     # Find addons shared across apps
     shared_addons = reduce(
@@ -91,8 +92,79 @@ def find_packages(app=None):
         set()
     )
 
-    print shared_addons
+    # Get unique addons for each app
+    app_addons = {
+        app: (app_addons[app] - shared_addons)
+        for app in apps
+    }
 
+    # Get inter-app dependencies and filter out truly independent addons
+    odoo_addons = set()
+    for addon in list(shared_addons):
+        deps = get_out_dependencies(addon) | set([addon])
+        app_dependencies = set([
+            app
+            for app in apps
+            if len(get_in_dependencies(app) & deps) > 0
+        ])
+
+        if addon in apps:
+            # Dealing with an app
+            app_addons[addon].add(addon)
+            apps[addon].update({
+                'app_dependencies': set(app_dependencies)
+            })
+        elif not app_dependencies:
+            # App independent addon
+            odoo_addons.add(addon)
+        else:
+            continue
+
+        # No longer a shared addon
+        shared_addons.remove(addon)
+
+    # Filter out addons according to  already existing inter app dependencies
+    for addon in list(shared_addons):
+        out_deps = get_out_dependencies(addon) | set([addon])
+        in_deps = get_in_dependencies(addon)
+        app_dependencies = set([
+            app
+            for app in apps
+            if len(get_in_dependencies(app) & out_deps) > 0
+        ])
+        
+        dependant_apps = set([
+            app
+            for app in apps
+            if app in in_deps
+        ])
+
+        # Find single app dependency that fulfilles all other app dependencies for
+        # this addon.
+        for app in app_dependencies:
+            fulfilles_in = len((app_dependencies - set([app])) - apps[app]['app_dependencies']) == 0
+            fulfilles_out = not dependant_apps or all([
+                app in apps[dep]['app_dependencies']
+                for dep in 
+                dependant_apps
+            ])
+
+            if fulfilles_in and fulfilles_out:
+                break
+        else:
+            continue
+
+        app_addons[app].add(addon)
+
+        # No longer a shared addon
+        shared_addons.remove(addon)
+    
+    # Merge app addons with apps
+    stale = set(manifests.keys()) - shared_addons - odoo_addons
+    for app in apps:
+        stale -= app_addons[app]
+        apps[app]['addons'] = set(app_addons[app])
+    
     return []
 
 
