@@ -1,7 +1,10 @@
 import os
+import ast
 import shutil
 import tempfile
-from setuptools import setup, find_packages
+import itertools
+from collections import defaultdict
+from setuptools import setup, find_packages as _find_packages
 
 
 VERSION_FILE = './VERSION'
@@ -12,6 +15,85 @@ ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
 ODOO_URL = os.environ.get('ODOO_URL', False)
 ODOO_VERSION = os.environ.get('ODOO_VERSION', False)
+
+
+def _import_manifest(addon):
+    manifest_file = os.path.join(ODOO_LOCATION, ODOO_ADDONS, addon, '__manifest__.py')
+    with open(manifest_file) as f:
+        return ast.literal_eval(f.read())
+
+
+def _find_addons():
+    addons = []
+    for package in _find_packages(include=('odoo.addons.*',)):
+        parts = package.split('odoo.addons.')[1].split('.')
+        if len(parts) != 1:
+            continue
+        addons.append(parts[0])
+
+    return addons
+
+
+def find_packages(app=None):
+
+    # Map addons to manifests
+    manifests = {
+        addon: _import_manifest(addon)
+        for addon in _find_addons()
+    }
+
+    apps = {
+        addon: {}
+        for addon, manifest
+        in manifests.iteritems()
+        if manifest.get('application')
+    }
+    
+    # Create incomming dep graph
+    g = defaultdict(set)
+    for addon in manifests:
+        for dep in manifests[addon].get('depends', []):
+            g[dep].add(addon)
+
+
+    def get_out_dependencies(addon):
+        dependencies = set()
+        manifest = manifests[addon]
+        for dep in manifest.get('depends', []):
+            dependencies.add(dep)
+            dependencies |= get_out_dependencies(dep)
+        
+        return dependencies
+
+    def get_in_dependencies(addon):
+        dependencies = set(g[addon])
+        for dep in g[addon]:
+            dependencies |= get_in_dependencies(dep)
+        return dependencies
+
+    
+
+    # Find dependant addons for each app that have no direct dependency to another app
+    app_addons = {
+        app: set([
+            dep 
+            for dep
+            in get_in_dependencies(app)
+            if not filter(lambda x: x in apps, manifests[dep].get('depends', []))
+        ])
+        for app in apps
+    }
+
+    # Find addons shared across apps
+    shared_addons = reduce(
+        lambda acc, (a,b): acc | (app_addons[a] & app_addons[b]),
+        itertools.combinations(apps.keys(), 2),
+        set()
+    )
+
+    print shared_addons
+
+    return []
 
 
 def bootstrap_odoo(url, location):
@@ -65,6 +147,7 @@ else:
 if ODOO_URL:
     with open(URL_FILE, 'w') as f:
         f.write(ODOO_URL)
+
 
 
 setup(
