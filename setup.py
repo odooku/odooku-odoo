@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import itertools
 import json
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
@@ -63,6 +63,7 @@ ODOO_REQUIREMENTS = [
     'mock==2.0.0',
     'passlib==1.6.5',
     'Pillow==3.4.1',
+    'psutil==5.2.2',
     'psycogreen==1.0',
     'psycopg2==2.6.2',
     'python-dateutil==2.5.3',
@@ -103,6 +104,58 @@ ODOO_LOCATION = './%s' % ODOO
 FEATURE = os.environ.get('FEATURE', None)
 ODOO_URL = os.environ.get('ODOO_URL', False)
 ODOO_VERSION = os.environ.get('ODOO_VERSION', False)
+
+
+def topological_sort(graph):
+    """
+    Performs a dependency based topological sort. Keeping a stable order.
+    Arguments:
+        - graph: An (ordered) dictionary representing a directed graph. Where each item
+        is { node: [set or list of incomming edges (depedencies)] }
+    """
+
+    # Copy graph for lookup purposes
+    incomming = OrderedDict(
+        [
+            (node, list(edges)) for node, edges in graph.iteritems()
+        ]
+    )
+
+    # Try to output nodes in initial order
+    nodes = [node for node in incomming.iterkeys()]
+
+    # Keep a stack in order to detect cyclic dependencies
+    stack = []
+    while nodes:
+        # Get first node
+        n = nodes[0]
+
+        # See if this node has dependencies which haven't yet been
+        # outputted.
+        remaining = [node for node in reversed(incomming[n]) if node in nodes]
+        if remaining:
+            if n not in stack:
+                stack.append(n)
+            else:
+                raise Exception(
+                    "Cyclic dependency"
+                    " detected {0}".format(
+                        '->'.join(
+                            [
+                                str(x) for x in (
+                                    stack + [n]
+                                )
+                            ]
+                        )
+                    )
+                )
+            for m in remaining:
+                # Place dependency at front
+                nodes.remove(m)
+                nodes.insert(0, m)
+        else:
+            # No dependencies left, output
+            yield nodes.pop(0)
 
 
 def _import_manifest(addon):
@@ -301,32 +354,36 @@ def configure(version, feature=None):
     apps, odoo_addons, extra_addons = analyze()
 
     name = 'odooku-odoo%s' % ('' if not feature else '-%s' % feature)
+    description = ''
     install_requires = set()
     package_dir = None
-    namespace_packages = set()
     packages = set()
     addons = set()
 
     if not feature:
         # odooku-odoo
+        description = 'Odoo for Odooku'
         packages |= set(find_packages(exclude=('odoo.addons.*',)))
         addons |= set(odoo_addons)
         install_requires |= set(ODOO_REQUIREMENTS)
     else:
         packages.add('odoo.addons')
-        namespace_packages.add('odoo.addons')
         install_requires.add('odooku-odoo==%s' % version)
         if feature in apps:
             # odooku-odoo-<app>
+            manifest = _import_manifest(feature)
+            description = 'Odoo addons for app %s' % manifest.get('name')
             addons |= set(apps[feature]['addons'])
             for dep in apps[feature]['app_dependencies']:
                 install_requires.add('odooku-odoo-%s==%s' % (dep, version))
         elif feature == 'addons':
+            description = 'All Odoo addons for Odooku'
             install_requires.add('odooku-odoo-extra==%s' % version)
             # odooku-odoo-addons
             for app in apps:
                 install_requires.add('odooku-odoo-%s==%s' % (app, version))
         elif feature == 'extra':
+            description = 'Extra Odoo addons for Odooku'
             # odooku-odoo-extra
             addons |= set(extra_addons)
         else:
@@ -352,11 +409,11 @@ def configure(version, feature=None):
     return {
         'name': name,
         'version': version,
+        'description': description,
         'package_dir': package_dir,
         'packages': list(packages),
         'package_data': package_data,
-        'install_requires': list(install_requires),
-        'namespace_packages': list(namespace_packages)
+        'install_requires': list(install_requires)
     }
 
 
@@ -430,8 +487,14 @@ class features(Command):
 
     def run(self):
         apps, odoo_addons, extra_addons = analyze()
-        features = ['addons', 'extra']
-        features += list(apps.keys())
+        features = []
+
+        g = defaultdict(set)
+        for app in apps:
+            g[app] = apps[app].get('app_dependencies')
+        
+        features += list(topological_sort(g))
+        features += ['extra', 'addons']
 
         for feature in features:
             print feature
@@ -440,8 +503,6 @@ setup(
     url='https://github.com/odooku/odooku-odoo',
     author='Raymond Reggers - Adaptiv Design',
     author_email='raymond@adaptiv.nl',
-    description=('Odooku Odoo'),
-    keywords='odoo odooku',
     license='LGPLv3',
     zip_safe=False,
     cmdclass= {

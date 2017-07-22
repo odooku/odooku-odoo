@@ -1,0 +1,34 @@
+dist: trusty
+sudo: required
+language: python
+
+python:
+  - '2.7'
+
+services:
+  - postgresql: '9.5'
+  - redis-server
+  - docker
+
+env:
+  global:
+    - DATABASE_URL=postgres://postgres:@localhost:5432
+    - REDIS_URL=redis://localhost:6379
+    - S3_BUCKET=odooku
+    - S3_ENDPOINT_URL=http://localhost:4569
+    - S3_CUSTOM_DOMAIN=http://odooku.localhost:4569
+    - AWS_ACCESS_KEY_ID=foobar
+    - AWS_SECRET_ACCESS_KEY=foobar
+
+install:
+  - sudo apt-get install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libssl-dev nodejs npm
+  - ./dist.bash
+  - ./install.bash
+  - pip install -r requirements.travis.txt
+  - sudo npm install -g less
+
+before_script:
+  - docker run --name s3 -p 4569:4569 -d lphoward/fake-s3:latest -r /fakes3_root -p 4569 -H localhost
+
+script:
+  - odooku runtests --db-name test

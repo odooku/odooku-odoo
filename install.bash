@@ -2,12 +2,12 @@
 
 source version
 
-# sdist odoo
-ODOO_VERSION=$ODOO_VERSION ODOO_URL=$ODOO_URL python setup.py sdist
+# install odoo
+pip install ./dist/odooku-odoo-$ODOO_VERSION.tar.gz
 
-# sdist features
+# install features
 features=($(ODOO_VERSION=$ODOO_VERSION python setup.py features))
 for f in "${features[@]:2}"; do
 echo "Running sdist for feature $f"
-ODOO_VERSION=$ODOO_VERSION FEATURE=$f python setup.py sdist
+pip install ./dist/odooku-odoo-$f-$ODOO_VERSION.tar.gz
 done
