@@ -52,6 +52,50 @@ EXTENSIONS = [
 ]
 
 
+ODOO_REQUIREMENTS = [
+    'Babel==2.3.4',
+    'decorator==4.0.10',
+    'docutils==0.12',
+    'gevent==1.1.2',
+    'greenlet==0.4.10',
+    'Jinja2==2.8',
+    'lxml==3.5.0',
+    'mock==2.0.0',
+    'passlib==1.6.5',
+    'Pillow==3.4.1',
+    'psycogreen==1.0',
+    'psycopg2==2.6.2',
+    'python-dateutil==2.5.3',
+    'pytz==2016.7',
+    'PyYAML==3.12',
+    'requests==2.11.1',
+    'six==1.10.0',
+    'vatnumber==1.2',
+    'Werkzeug==0.11.11',
+    'XlsxWriter==0.9.3',
+    'xlwt==1.1.2'
+]
+
+
+REQUIREMENTS = {
+    'python-ldap==2.4.27': ['auth_ldap'],
+    'pyserial==3.1.1': ['hw_blackbox_be', 'hw_scale', 'hw_escpos'],
+    'pyusb==1.0.0b1': ['hw_escpos'],
+    'qrcode==5.3': ['hw_escpos'],
+    'jcconv==0.2.3': ['hw_escpos'],
+    'vobject==0.9.3': ['calendar'],
+    'feedparser==5.2.1': ['mail'],
+    'pyPdf==1.13': ['report'],
+    'reportlab==3.3.0': ['report'],
+    'Mako==1.0.4': ['report'],
+    'Python-Chart==1.39': ['report'],
+    'pydot==1.2.3': ['workflow'],
+    'odfpy==1.3.5': ['base_import'],
+    'xlrd==1.0.0': ['base_import'],
+}
+
+
+
 ODOO = 'odoo'
 ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
@@ -231,124 +275,88 @@ def analyze():
     
     # Filter out apps that are dependant on shared addons
     for app in list(apps):
-        out_deps = get_out_dependencies(app)
-        if out_deps & shared_addons:
-            shared_addons |= set([app]) | app_addons[app]
-            del app_addons[app]
-            del apps[app]
+        shared_deps =  (get_out_dependencies(app) | get_in_dependencies(app)) & shared_addons
+        app_addons[app] |= shared_deps
     
-    # Get extra addons (fully independent, would otherwise be ignored)
-    extra_addons = set(manifests.keys()) - shared_addons - odoo_addons
-
-    # Merge app addons with apps
+    # Combine everything
+    # Find unreferenced addons
+    remaining_addons = set(manifests.keys()) - odoo_addons
     for app in apps:
-        extra_addons -= app_addons[app]
+        remaining_addons -= app_addons[app]
+        shared_addons -= app_addons[app]
         apps[app]['addons'] = set(app_addons[app])
-
-    return apps, odoo_addons, shared_addons, extra_addons
+    
+    for addon in list(remaining_addons):
+        manifest = manifests[addon]
+        if manifest.get('auto_install'):
+            remaining_addons.remove(addon)
+            odoo_addons.add(addon)
+    
+    assert not shared_addons
+    return apps, odoo_addons, remaining_addons
 
 
 def configure(version, feature=None):
 
-    apps, odoo_addons, shared_addons, extra_addons = analyze()
+    apps, odoo_addons, extra_addons = analyze()
 
     name = 'odooku-odoo%s' % ('' if not feature else '-%s' % feature)
-    install_requires = []
-    package_dir = { '': 'odoo' } if FEATURE else None
+    install_requires = set()
+    package_dir = None
+    namespace_packages = set()
+    packages = set()
+    addons = set()
 
     if not feature:
         # odooku-odoo
-        packages = find_packages(exclude=('odoo.addons.*',))
-        for addon in odoo_addons:
-            packages += _find_addon_packages(addon)
-
-        install_requires += [
-            'Babel==2.3.4',
-            'decorator==4.0.10',
-            'docutils==0.12',
-            'ebaysdk==2.1.4',
-            'feedparser==5.2.1',
-            'gevent==1.1.2',
-            'greenlet==0.4.10',
-            'jcconv==0.2.3',
-            'Jinja2==2.8',
-            'lxml==3.5.0',
-            'Mako==1.0.4',
-            'MarkupSafe==0.23',
-            'mock==2.0.0',
-            'odfpy==1.3.5',
-            'ofxparse==0.15',
-            'passlib==1.6.5',
-            'Pillow==3.4.1',
-            'psutil==4.3.1',
-            'psycogreen==1.0',
-            'psycopg2==2.6.2',
-            'pydot==1.2.3',
-            'pyparsing==2.1.10',
-            'pyPdf==1.13',
-            'pyserial==3.1.1',
-            'Python-Chart==1.39',
-            'python-dateutil==2.5.3',
-            'python-ldap==2.4.27',
-            'python-openid==2.2.5',
-            'pytz==2016.7',
-            'pyusb==1.0.0b1',
-            'PyYAML==3.12',
-            'qrcode==5.3',
-            'reportlab==3.3.0',
-            'requests==2.11.1',
-            'six==1.10.0',
-            'suds-jurko==0.6',
-            'vatnumber==1.2',
-            'vobject==0.9.3',
-            'Werkzeug==0.11.11',
-            'wsgiref==0.1.2',
-            'XlsxWriter==0.9.3',
-            'xlwt==1.1.2',
-            'xlrd==1.0.0'
-        ]
+        packages |= set(find_packages(exclude=('odoo.addons.*',)))
+        addons |= set(odoo_addons)
+        install_requires |= set(ODOO_REQUIREMENTS)
     else:
-        packages = ['odoo.addons']
-        install_requires += ['odooku-odoo==%s' % version]
+        packages.add('odoo.addons')
+        namespace_packages.add('odoo.addons')
+        install_requires.add('odooku-odoo==%s' % version)
         if feature in apps:
             # odooku-odoo-<app>
-            for addon in apps[feature]['addons']:
-                packages += _find_addon_packages(addon)
+            addons |= set(apps[feature]['addons'])
             for dep in apps[feature]['app_dependencies']:
-                install_requires.append('odooku-odoo-%s==%s' % (dep, version))
+                install_requires.add('odooku-odoo-%s==%s' % (dep, version))
         elif feature == 'addons':
+            install_requires.add('odooku-odoo-extra==%s' % version)
             # odooku-odoo-addons
-            for addon in shared_addons:
-                packages += _find_addon_packages(addon)
             for app in apps:
-                install_requires.append('odooku-odoo-%s==%s' % (app, version))
+                install_requires.add('odooku-odoo-%s==%s' % (app, version))
         elif feature == 'extra':
             # odooku-odoo-extra
-            for addon in extra_addons:
-                packages += _find_addon_packages(addon)
+            addons |= set(extra_addons)
         else:
             raise Exception("Unknown feature '%s'" % feature)
 
-        # Get rid of odoo namespace
-        packages = [
-            package.split('odoo.')[1]
-            for package in packages
-        ]
+    # Map requirements to addons
+    addon_requirements = defaultdict(set)
+    for req in REQUIREMENTS:
+        for addon in REQUIREMENTS[req]:
+            addon_requirements[addon].add(req)
 
+    for addon in addons:
+        packages |= set(_find_addon_packages(addon))
+        if addon in addon_requirements:
+            install_requires |= addon_requirements[addon]
 
     package_data = {
-        package: _find_package_data_files(package, packages, package_dir='./odoo' if feature else '.')
+        package: _find_package_data_files(package, packages)
         for package in packages
-        if package not in ('odoo.addons', 'addons')
+        if package not in ('odoo.addons',)
     }
     
     return {
         'name': name,
         'version': version,
         'package_dir': package_dir,
-        'packages': packages,
+        'packages': list(packages),
         'package_data': package_data,
-        'install_requires': install_requires
+        'install_requires': list(install_requires),
+        'namespace_packages': list(namespace_packages)
     }
 
 
@@ -387,7 +395,7 @@ def deunicodify_hook(pairs):
 
 
 if not os.path.exists(ODOO_LOCATION):
-    if not ODOO_LOCATION:
+    if not ODOO_URL:
         raise Exception("Could not bootstrap Odoo. Set ODOO_URL.")
     if not bootstrap_odoo(ODOO_URL, ODOO_LOCATION):
         raise Exception("Could not bootstrap Odoo. Ensure pip is installed.")
@@ -421,7 +429,7 @@ class features(Command):
         pass
 
     def run(self):
-        apps, odoo_addons, shared_addons, extra_addons = analyze()
+        apps, odoo_addons, extra_addons = analyze()
         features = ['addons', 'extra']
         features += list(apps.keys())
 
@@ -433,6 +441,7 @@ setup(
     author='Raymond Reggers - Adaptiv Design',
     author_email='raymond@adaptiv.nl',
     description=('Odooku Odoo'),
+    keywords='odoo odooku',
     license='LGPLv3',
     zip_safe=False,
     cmdclass= {
@@ -445,7 +454,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
-        'License :: OSI Approved :: Apache Software License',
+        'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
     ],
     **conf
 )
