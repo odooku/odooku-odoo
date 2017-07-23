@@ -33,9 +33,4 @@ deploy:
   script:
     - twine upload dist/*
   on:
-    branch: release
     tags: true
-branches:
-  only:
-    tags: 
-      - all
