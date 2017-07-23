@@ -29,6 +29,7 @@ before_script:
 script:
 - odooku runtests --db-name test
 deploy:
+  skip_cleanup: true
   provider: script
   script:
     - twine upload dist/*
