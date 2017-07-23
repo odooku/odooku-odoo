@@ -104,7 +104,7 @@ ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
 
 FEATURE = os.environ.get('FEATURE', None)
-LANGUAGES = [lang.strip() for lang in os.environ.get('LANGUAGES', '').split(',')]
+LANGUAGES = [lang.strip() for lang in os.environ.get('LANGUAGES', '').split(',') if lang.strip()]
 ODOO_URL = os.environ.get('ODOO_URL', DEFAULT_ODOO_URL)
 ODOO_VERSION = os.environ.get('ODOO_VERSION', DEFAULT_ODOO_VERSION)
 

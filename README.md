@@ -1,8 +1,9 @@
 Odooku Odoo
 ===========
 
-**DISCLAIMER:  All files packaged by this application are Copyright (c) 2004-2017 Odoo S.A. Original LICENSE and COPYRIGHT file is included. The purpose of these packages is to provide an easy and reliable installation method for Odoo. **
+**DISCLAIMER: All files packaged by this application are Copyright (c) 2004-2017 Odoo S.A. Original LICENSE and COPYRIGHT file is included. The purpose of these packages is to provide an easy and reliable installation method for Odoo.**
 
+[![Build Status](https://travis-ci.org/odooku/odooku-odoo.svg?branch=release)](https://travis-ci.org/odooku/odooku-odoo)
 
 ## Installation
 
@@ -24,7 +25,7 @@ Available options are:
  - calendar
  - contacts
  - crm
- - **extra: ** This package provides point of sale hardware modules and a few test modules.
+ - **extra:** This package provides point of sale hardware modules and a few test modules.
  - fleet 
  - hr 
  - hr_attendance 
@@ -57,6 +58,8 @@ Available options are:
 
 ## Build requirements
 
+While the Odoo source code does not require any distribution libraries, it's dependencies do. In order for them to build successfully follow instructions below:
+
 #### Ubuntu 16.04 LTS
 ```
 sudo apt-get install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libssl-dev
@@ -67,17 +70,27 @@ sudo apt-get install libpq-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-de
 brew install postgresql
 ```
 
-## LESSC
+## External dependencies
 
+At runtime Odoo will always require the LESSC compiler, and most likely wkhtmltopdf.
+
+#### lessc
 This package does not install the LESSC compiler for you.
 
-## WKHTMLTOPDF
-
-#### Ubuntu 16.04 LTS
-
+#### wkhtmltopdf
 This package does not install the wkhtmltopdf binary for you.
 
-## Using the setup script manually
+## Update policy
+
+Tags under the release branch are published to pypi periodically. The source for these builds are found at [the Odoo github repository](https://github.com/odoo/odoo). A commit is pinned and tested, while the version number is simply bumped. 
+
+#### Frequency
+Due to the large size of these packages, pypi pushes will be done once every month. If you require more frequent updates, concider running the setup script manually or using your own pypi server. 
+
+#### Version format
+[ODOO_VERSION].[BUMP] For Odoo 10 the version format will be 10.0.[BUMP]
+
+## Using the setup script
 
 #### Install directly 
 
@@ -90,7 +103,7 @@ Running the setup.py script through pip will install the full Odoo suite:
 In order to install seperate features run like so:
 
 ```
-FEATURE=<desired feature> pip install .
+FEATURE=<feature> pip install .
 ```
 
 This will always require the 'base' feature. In order to install the 'account'
@@ -108,7 +121,7 @@ automatic dependency resolving:
 
 ```
 ./bdist_wheel.bash
-pip install --find-links file://$(pwd)/dist odooku-odoo-feature
+pip install --find-links file://$(pwd)/dist odooku-odoo-<feature>
 ```
 
 #### Installing without all languages
