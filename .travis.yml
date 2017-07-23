@@ -37,4 +37,5 @@ deploy:
     tags: true
 branches:
   only:
-    - release
+    tags: 
+      - all
