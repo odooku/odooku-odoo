@@ -3,7 +3,7 @@ Odooku Odoo
 
 **DISCLAIMER: All files packaged by this application are Copyright (c) 2004-2017 Odoo S.A. Original LICENSE and COPYRIGHT file is included. The purpose of these packages is to provide an easy and reliable installation method for Odoo.**
 
-[![Build Status](https://travis-ci.org/odooku/odooku-odoo.svg?branch=release)](https://travis-ci.org/odooku/odooku-odoo)
+[![Build Status](https://travis-ci.org/odooku/odooku-odoo.svg?branch=10.0)](https://travis-ci.org/odooku/odooku-odoo)
 
 ## Installation
 
