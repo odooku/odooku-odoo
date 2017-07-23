@@ -10,6 +10,10 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/df135166799ccafd49c2aa684bb0ff845af31b09/10.0.tar.gz'
+DEFAULT_ODOO_VERSION = '10.0.0'
+
+
 EXTENSIONS = [
     'css',
     'csv',
@@ -30,7 +34,6 @@ EXTENSIONS = [
     'otf',
     'pdf',
     'png',
-    'po',
     'rml',
     'rng',
     'rst',
@@ -96,14 +99,14 @@ REQUIREMENTS = {
 }
 
 
-
 ODOO = 'odoo'
 ODOO_ADDONS = 'addons'
 ODOO_LOCATION = './%s' % ODOO
 
 FEATURE = os.environ.get('FEATURE', None)
-ODOO_URL = os.environ.get('ODOO_URL', False)
-ODOO_VERSION = os.environ.get('ODOO_VERSION', False)
+LANGUAGES = [lang.strip() for lang in os.environ.get('LANGUAGES', '').split(',')]
+ODOO_URL = os.environ.get('ODOO_URL', DEFAULT_ODOO_URL)
+ODOO_VERSION = os.environ.get('ODOO_VERSION', DEFAULT_ODOO_VERSION)
 
 
 def topological_sort(graph):
@@ -179,7 +182,7 @@ def _find_addon_packages(addon):
     return find_packages(include=('odoo.addons.%s' % addon, 'odoo.addons.%s.*' % addon))
 
 
-def _find_package_data_files(package, excludes, package_dir="."):
+def _find_package_data_files(package, excludes, package_dir=".", languages=None):
     path = os.path.join(*([package_dir] + package.split('.')))
     exclude_paths = [
         os.path.join(*([package_dir] + exclude.split('.')))
@@ -198,6 +201,20 @@ def _find_package_data_files(package, excludes, package_dir="."):
                 os.path.relpath(os.path.join(root, match), path)
                 for match in fnmatch.filter(filenames, '*.%s' % ext)
             ])
+
+        if languages:
+            for language in languages:
+                files |= set([
+                    os.path.relpath(os.path.join(root, match), path)
+                    for match in fnmatch.filter(filenames, '%s.po' % language)
+                ])
+        else:
+            # Find all translation files
+            files |= set([
+                os.path.relpath(os.path.join(root, match), path)
+                for match in fnmatch.filter(filenames, '*.po')
+            ])
+            
     
     return list(files)
 
@@ -266,7 +283,7 @@ def analyze():
     }
 
     # Get inter-app dependencies and filter out truly independent addons
-    odoo_addons = set()
+    base_addons = set()
     for addon in list(shared_addons):
         deps = get_out_dependencies(addon) | set([addon])
         app_dependencies = set([
@@ -283,7 +300,7 @@ def analyze():
             })
         elif not app_dependencies:
             # App independent addon
-            odoo_addons.add(addon)
+            base_addons.add(addon)
         else:
             continue
 
@@ -333,7 +350,7 @@ def analyze():
     
     # Combine everything
     # Find unreferenced addons
-    remaining_addons = set(manifests.keys()) - odoo_addons
+    remaining_addons = set(manifests.keys()) - base_addons
     for app in apps:
         remaining_addons -= app_addons[app]
         shared_addons -= app_addons[app]
@@ -343,15 +360,15 @@ def analyze():
         manifest = manifests[addon]
         if manifest.get('auto_install'):
             remaining_addons.remove(addon)
-            odoo_addons.add(addon)
+            base_addons.add(addon)
     
     assert not shared_addons
-    return apps, odoo_addons, remaining_addons
+    return apps, base_addons, remaining_addons
 
 
-def configure(version, feature=None):
+def configure(version, feature=None, languages=None):
 
-    apps, odoo_addons, extra_addons = analyze()
+    apps, base_addons, extra_addons = analyze()
 
     name = 'odooku-odoo%s' % ('' if not feature else '-%s' % feature)
     description = ''
@@ -361,30 +378,34 @@ def configure(version, feature=None):
     addons = set()
 
     if not feature:
-        # odooku-odoo
-        description = 'Odoo for Odooku'
+        description = 'Odoo full installation'
         packages |= set(find_packages(exclude=('odoo.addons.*',)))
-        addons |= set(odoo_addons)
+        addons |= set(base_addons) | set(extra_addons) | set(itertools.chain(*[
+            apps[app]['addons']
+            for app in apps
+        ]))
+        install_requires |= set(ODOO_REQUIREMENTS)
+    elif feature == 'base':
+        description = 'Odoo base installation'
+        packages |= set(find_packages(exclude=('odoo.addons.*',)))
+        addons |= set(base_addons)
         install_requires |= set(ODOO_REQUIREMENTS)
     else:
         packages.add('odoo.addons')
-        install_requires.add('odooku-odoo==%s' % version)
+        install_requires.add('odooku-odoo-base==%s' % version)
         if feature in apps:
-            # odooku-odoo-<app>
             manifest = _import_manifest(feature)
-            description = 'Odoo addons for app %s' % manifest.get('name')
+            description = 'Odoo addons for the %s app' % manifest.get('name')
             addons |= set(apps[feature]['addons'])
             for dep in apps[feature]['app_dependencies']:
                 install_requires.add('odooku-odoo-%s==%s' % (dep, version))
         elif feature == 'addons':
-            description = 'All Odoo addons for Odooku'
+            description = 'All addons for Odoo'
             install_requires.add('odooku-odoo-extra==%s' % version)
-            # odooku-odoo-addons
             for app in apps:
                 install_requires.add('odooku-odoo-%s==%s' % (app, version))
         elif feature == 'extra':
-            description = 'Extra Odoo addons for Odooku'
-            # odooku-odoo-extra
+            description = 'Extra Odoo addons'
             addons |= set(extra_addons)
         else:
             raise Exception("Unknown feature '%s'" % feature)
@@ -401,15 +422,22 @@ def configure(version, feature=None):
             install_requires |= addon_requirements[addon]
 
     package_data = {
-        package: _find_package_data_files(package, packages)
+        package: _find_package_data_files(package, packages, languages=languages)
         for package in packages
         if package not in ('odoo.addons',)
     }
+
+    try:
+        import pypandoc
+        long_description = pypandoc.convert('README.md', 'rst')
+    except(IOError, ImportError):
+        long_description = open('README.md').read()
     
     return {
         'name': name,
         'version': version,
         'description': description,
+        'long_description': long_description,
         'package_dir': package_dir,
         'packages': list(packages),
         'package_data': package_data,
@@ -458,10 +486,13 @@ if not os.path.exists(ODOO_LOCATION):
         raise Exception("Could not bootstrap Odoo. Ensure pip is installed.")
 
 
-if not os.path.exists('./setup.json') or ODOO_VERSION:
+# In case of source distributions there is no complete odoo directory
+# so configuration is impossible the setup.json file contains all
+# setup variables that where previously configured.
+if not os.path.exists('./setup.json'):
     if not ODOO_VERSION:
         raise Exception("Could not configure. Set ODOO_VERSION.")
-    conf = configure(ODOO_VERSION, feature=FEATURE)
+    conf = configure(ODOO_VERSION, feature=FEATURE, languages=LANGUAGES)
 else:
     with open('./setup.json', 'r') as f:
         conf = json.load(f, object_pairs_hook=deunicodify_hook)
@@ -486,9 +517,9 @@ class features(Command):
         pass
 
     def run(self):
-        apps, odoo_addons, extra_addons = analyze()
-        features = []
-
+        apps, base_addons, extra_addons = analyze()
+        features = ['base']
+        
         g = defaultdict(set)
         for app in apps:
             g[app] = apps[app].get('app_dependencies')
@@ -499,10 +530,10 @@ class features(Command):
         for feature in features:
             print feature
 
+
 setup(
     url='https://github.com/odooku/odooku-odoo',
     author='Raymond Reggers - Adaptiv Design',
-    author_email='raymond@adaptiv.nl',
     license='LGPLv3',
     zip_safe=False,
     cmdclass= {

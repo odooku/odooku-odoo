@@ -1,2 +1,4 @@
 include LICENSE
+include COPYRIGHT
+include DISCLAIMER
 include README.md

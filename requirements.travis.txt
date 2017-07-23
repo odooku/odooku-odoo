@@ -1,2 +1,3 @@
 git+https://github.com/odooku/odooku
 twine==1.9.1
+pypandoc==1.4
