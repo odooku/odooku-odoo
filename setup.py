@@ -4,14 +4,15 @@ import ast
 import shutil
 import tempfile
 import itertools
+import functools
 import json
 from collections import defaultdict, OrderedDict
 from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/df135166799ccafd49c2aa684bb0ff845af31b09/10.0.tar.gz'
-DEFAULT_ODOO_VERSION = '10.0.0'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/a0a5443e8f0606b561d2955449a690ea8a178703/11.0.tar.gz'
+DEFAULT_ODOO_VERSION = '11.0.0'
 
 
 EXTENSIONS = [
@@ -61,40 +62,37 @@ ODOO_REQUIREMENTS = [
     'docutils==0.12',
     'gevent==1.1.2',
     'greenlet==0.4.10',
+    'html2text==2017.10.4',
     'Jinja2==2.8',
     'lxml==3.5.0',
+    'Mako==1.0.7',
     'mock==2.0.0',
+    'num2words==0.5.5',
     'passlib==1.6.5',
-    'Pillow==3.4.1',
+    'Pillow==4.3.0',
     'psutil==5.2.2',
-    'psycogreen==1.0',
-    'psycopg2==2.6.2',
+    'psycopg2==2.7.3',
+    'PyPDF2==1.26',
     'python-dateutil==2.5.3',
     'pytz==2016.7',
     'PyYAML==3.12',
+    'reportlab==3.4.0',
     'requests==2.11.1',
     'six==1.10.0',
     'vatnumber==1.2',
     'Werkzeug==0.11.11',
     'XlsxWriter==0.9.3',
-    'xlwt==1.1.2'
+    'xlwt==1.3.0'
 ]
 
 
 REQUIREMENTS = {
-    'python-ldap==2.4.27': ['auth_ldap'],
+    'pyldap==2.4.28': ['auth_ldap'],
     'pyserial==3.1.1': ['hw_blackbox_be', 'hw_scale', 'hw_escpos'],
-    'pyusb==1.0.0b1': ['hw_escpos'],
+    'pyusb==1.0.0': ['hw_escpos'],
     'qrcode==5.3': ['hw_escpos'],
-    'jcconv==0.2.3': ['hw_escpos'],
     'vobject==0.9.3': ['calendar'],
     'feedparser==5.2.1': ['mail'],
-    'pyPdf==1.13': ['report'],
-    'reportlab==3.3.0': ['report'],
-    'Mako==1.0.4': ['report'],
-    'Python-Chart==1.39': ['report'],
-    'pydot==1.2.3': ['workflow'],
-    'odfpy==1.3.5': ['base_import'],
     'xlrd==1.0.0': ['base_import'],
 }
 
@@ -120,12 +118,12 @@ def topological_sort(graph):
     # Copy graph for lookup purposes
     incomming = OrderedDict(
         [
-            (node, list(edges)) for node, edges in graph.iteritems()
+            (node, list(edges)) for node, edges in graph.items()
         ]
     )
 
     # Try to output nodes in initial order
-    nodes = [node for node in incomming.iterkeys()]
+    nodes = [node for node in incomming.keys()]
 
     # Keep a stack in order to detect cyclic dependencies
     stack = []
@@ -232,7 +230,7 @@ def analyze():
             'app_dependencies': set()
         }
         for addon, manifest
-        in manifests.iteritems()
+        in manifests.items()
         if manifest.get('application')
     }
     
@@ -270,8 +268,8 @@ def analyze():
         app_addons[app] = addons
 
     # Find addons shared across apps
-    shared_addons = reduce(
-        lambda acc, (a,b): acc | (app_addons[a] & app_addons[b]),
+    shared_addons = functools.reduce(
+        lambda acc, ab: acc | (app_addons[ab[0]] & app_addons[ab[1]]),
         itertools.combinations(apps.keys(), 2),
         set()
     )
@@ -451,7 +449,8 @@ def bootstrap_odoo(url, location):
         from pip.download import unpack_url
     except ImportError:
         return False
-
+    
+    print('Boostrapping Odoo from %s' % url)
     temp = tempfile.mkdtemp()
     unpack_url(Link(url), temp)
 
@@ -471,9 +470,9 @@ def bootstrap_odoo(url, location):
 def deunicodify_hook(pairs):
     new_pairs = []
     for key, value in pairs:
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             value = value.encode('utf-8')
-        if isinstance(key, unicode):
+        if isinstance(key, str):
             key = key.encode('utf-8')
         new_pairs.append((key, value))
     return dict(new_pairs)
@@ -528,7 +527,7 @@ class features(Command):
         features += ['extra', 'addons']
 
         for feature in features:
-            print feature
+            print(feature)
 
 
 setup(
@@ -540,12 +539,13 @@ setup(
         'features': features,
         'sdist': sdist
     },
+    python_requires='>=3.5',
     classifiers=[
         'Intended Audience :: Developers',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
     ],
     **conf

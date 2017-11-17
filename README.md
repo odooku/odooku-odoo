@@ -3,7 +3,7 @@ Odooku Odoo
 
 **DISCLAIMER: All files packaged by this application are Copyright (c) 2004-2017 Odoo S.A. Original LICENSE and COPYRIGHT file is included. The purpose of these packages is to provide an easy and reliable installation method for Odoo.**
 
-[![Build Status](https://travis-ci.org/odooku/odooku-odoo.svg?branch=10.0)](https://travis-ci.org/odooku/odooku-odoo)
+[![Build Status](https://travis-ci.org/odooku/odooku-odoo.svg?branch=11.0)](https://travis-ci.org/odooku/odooku-odoo)
 
 ## Installation
 
@@ -19,42 +19,40 @@ pip install odooku-odoo-[app]
 
 Available options are:
 
- - account
- - account_accountant
- - board
- - calendar
- - contacts
- - crm
- - **extra:** This package provides point of sale hardware modules and a few test modules.
- - fleet 
- - hr 
- - hr_attendance 
- - hr_expense
- - hr_holidays
- - hr_recruitment
- - hr_timesheet
- - im_livechat
- - l10n_fr_certification
- - lunch
- - mail
- - maintenance
- - mass_mailing
- - mrp
- - mrp_repair
- - note
- - point_of_sale
- - project
- - project_issue
- - purchase
- - sale
- - stock
- - survey
- - website
- - website_blog
- - website_event
- - website_forum
- - website_sale
- - website_slides
+- mail
+- account_invoicing
+- board
+- calendar
+- contacts
+- crm
+- fleet
+- hr
+- hr_attendance
+- hr_expense
+- hr_holidays
+- hr_recruitment
+- project
+- hr_timesheet
+- im_livechat
+- lunch
+- maintenance
+- mass_mailing
+- stock
+- mrp
+- sale_management
+- mrp_repair
+- note
+- point_of_sale
+- purchase
+- website
+- survey
+- website_blog
+- website_event
+- website_forum
+- website_sale
+- website_slides
+- extra
+- addons
 
 ## Build requirements
 
@@ -88,7 +86,7 @@ Tags under the release branch are published to pypi periodically. The source for
 Due to the large size of these packages, pypi pushes will be done once every month. If you require more frequent updates, concider running the setup script manually or using your own pypi server. 
 
 #### Version format
-[ODOO_VERSION].[BUMP] For Odoo 10 the version format will be 10.0.[BUMP]
+[ODOO_VERSION].[BUMP] For Odoo 11 the version format will be 11.0.[BUMP]
 
 ## Using the setup script
 
