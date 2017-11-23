@@ -87,6 +87,7 @@ ODOO_REQUIREMENTS = [
 
 
 REQUIREMENTS = {
+    'suds-jurko==0.6': ['base_vat_autocomplete'],
     'pyldap==2.4.28': ['auth_ldap'],
     'pyserial==3.1.1': ['hw_blackbox_be', 'hw_scale', 'hw_escpos'],
     'pyusb==1.0.0': ['hw_escpos'],
