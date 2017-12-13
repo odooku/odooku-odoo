@@ -11,7 +11,7 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/a0a5443e8f0606b561d2955449a690ea8a178703/11.0.tar.gz'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/b37cc1f9b7897759a86cdccfa1b06d58361a97da/11.0.tar.gz'
 DEFAULT_ODOO_VERSION = '11.0.0'
 
 
