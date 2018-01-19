@@ -11,8 +11,8 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/b37cc1f9b7897759a86cdccfa1b06d58361a97da/11.0.tar.gz'
-DEFAULT_ODOO_VERSION = '11.0.0'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/f98470e6cff9a6d77958128a8f6ea94e18dc8c71/11.0.tar.gz'
+DEFAULT_ODOO_VERSION = '11.0.2'
 
 
 EXTENSIONS = [
@@ -60,7 +60,7 @@ ODOO_REQUIREMENTS = [
     'Babel==2.3.4',
     'decorator==4.0.10',
     'docutils==0.12',
-    'gevent==1.1.2',
+    'gevent==1.2.2',
     'greenlet==0.4.10',
     'html2text==2017.10.4',
     'Jinja2==2.8',
