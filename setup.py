@@ -11,8 +11,8 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/f98470e6cff9a6d77958128a8f6ea94e18dc8c71/11.0.tar.gz'
-DEFAULT_ODOO_VERSION = '11.0.2'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/4b43803dc6724339ea99ed43f0594afda6ea7068/11.0.tar.gz'
+DEFAULT_ODOO_VERSION = '11.0.3'
 
 
 EXTENSIONS = [
@@ -71,7 +71,7 @@ ODOO_REQUIREMENTS = [
     'passlib==1.6.5',
     'Pillow==4.3.0',
     'psutil==5.2.2',
-    'psycopg2==2.7.3',
+    'psycopg2==2.7.3.2',
     'PyPDF2==1.26',
     'python-dateutil==2.5.3',
     'pytz==2016.7',
@@ -95,6 +95,7 @@ REQUIREMENTS = {
     'vobject==0.9.3': ['calendar'],
     'feedparser==5.2.1': ['mail'],
     'xlrd==1.0.0': ['base_import'],
+    'phonenumbers==8.8.11': ['phone_validation']
 }
 
 
