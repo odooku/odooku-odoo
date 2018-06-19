@@ -11,8 +11,8 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/e8061518823f8e10af872a8849f75ecaf0a4530e/11.0.tar.gz'
-DEFAULT_ODOO_VERSION = '11.0.5'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/d65043c3c208a99ae1e861243974f8e91f8b4035/11.0.tar.gz'
+DEFAULT_ODOO_VERSION = '11.0.6'
 
 
 EXTENSIONS = [
@@ -447,8 +447,8 @@ def configure(version, feature=None, languages=None):
 
 def bootstrap_odoo(url, location):
     try:
-        from pip.index import Link
-        from pip.download import unpack_url
+        from pip._internal.index import Link
+        from pip._internal.download import unpack_url
     except ImportError:
         return False
     
