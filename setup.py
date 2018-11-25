@@ -11,8 +11,8 @@ from setuptools import Command, setup, find_packages
 from setuptools.command.sdist import sdist as sdist_orig
 
 
-DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/d65043c3c208a99ae1e861243974f8e91f8b4035/11.0.tar.gz'
-DEFAULT_ODOO_VERSION = '11.0.6'
+DEFAULT_ODOO_URL = 'https://github.com/odoo/odoo/archive/46b296dc4f177ee6ebc54b7a6f86c153807ad6ca/11.0.tar.gz'
+DEFAULT_ODOO_VERSION = '11.0.7'
 
 
 EXTENSIONS = [
@@ -57,45 +57,45 @@ EXTENSIONS = [
 
 
 ODOO_REQUIREMENTS = [
-    'Babel==2.3.4',
-    'decorator==4.0.10',
-    'docutils==0.12',
-    'gevent==1.2.2',
-    'greenlet==0.4.10',
-    'html2text==2017.10.4',
-    'Jinja2==2.8',
-    'lxml==3.5.0',
-    'Mako==1.0.7',
-    'mock==2.0.0',
-    'num2words==0.5.5',
-    'passlib==1.6.5',
-    'Pillow==4.3.0',
-    'psutil==5.2.2',
-    'psycopg2==2.7.3.2',
-    'PyPDF2==1.26',
-    'python-dateutil==2.5.3',
-    'pytz==2016.7',
-    'PyYAML==3.12',
-    'reportlab==3.4.0',
-    'requests==2.11.1',
-    'six==1.10.0',
-    'vatnumber==1.2',
-    'Werkzeug==0.11.11',
-    'XlsxWriter==0.9.3',
-    'xlwt==1.3.0'
+    'Babel>=2.3.4',
+    'decorator>=4.0.10',
+    'docutils>=0.12',
+    'gevent>=1.2.2',
+    'greenlet>=0.4.10',
+    'html2text>=2017.10.4',
+    'Jinja2>=2.8',
+    'lxml>=3.5.0',
+    'Mako>=1.0.7',
+    'mock>=2.0.0',
+    'num2words>=0.5.5',
+    'passlib>=1.6.5',
+    'Pillow>=4.3.0',
+    'psutil>=5.2.2',
+    'psycopg2>=2.7.3.2',
+    'PyPDF2>=1.26',
+    'python-dateutil>=2.5.3',
+    'pytz>=2016.7',
+    'PyYAML>=3.12',
+    'reportlab>=3.4.0',
+    'requests>=2.11.1',
+    'six>=1.10.0',
+    'vatnumber>=1.2',
+    'Werkzeug>=0.11.11',
+    'XlsxWriter>=0.9.3',
+    'xlwt>=1.3.0'
 ]
 
 
 REQUIREMENTS = {
-    'suds-jurko==0.6': ['base_vat_autocomplete'],
-    'pyldap==2.4.28': ['auth_ldap'],
-    'pyserial==3.1.1': ['hw_blackbox_be', 'hw_scale', 'hw_escpos'],
-    'pyusb==1.0.0': ['hw_escpos'],
-    'qrcode==5.3': ['hw_escpos'],
-    'vobject==0.9.3': ['calendar'],
-    'feedparser==5.2.1': ['mail'],
-    'xlrd==1.0.0': ['base_import'],
-    'phonenumbers==8.8.11': ['phone_validation']
+    'suds-jurko>=0.6': ['base_vat_autocomplete'],
+    'pyldap>=2.4.28': ['auth_ldap'],
+    'pyserial>=3.1.1': ['hw_blackbox_be', 'hw_scale', 'hw_escpos'],
+    'pyusb>=1.0.0': ['hw_escpos'],
+    'qrcode>=5.3': ['hw_escpos'],
+    'vobject>=0.9.3': ['calendar'],
+    'feedparser>=5.2.1': ['mail'],
+    'xlrd>=1.0.0': ['base_import'],
+    'phonenumbers>=8.8.11': ['phone_validation']
 }
 
 
